@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bookmarklet Bubbles</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    p {
+      margin: 0 0 24px 0;
+      font-size: 17px;
+    }
+
+    .bubbles {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+
+    .bubble {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 160px;
+      height: 160px;
+      padding: 0 14px;
+      background: #0077cc;
+      color: #fff;
+      border-radius: 50%;
+      text-decoration: none;
+      text-align: center;
+      line-height: 1.25;
+      cursor: grab; /* indicates you can drag */
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    .bubble:hover {
+      background: #005fa3;
+    }
+  </style>
+</head>
+<body>
+  <p>Click and drag a bubble up to your bookmarks bar to use the bookmark.</p>
+  <p>(For <a href="https://thinkings.bearblog.dev/bookmark/" target="_blank" rel="noopener noreferrer">thinkings.bearblog.dev/bookmark/</a>)</p>
+
+  <div class="bubbles">
+    <a id="tocLink" class="bubble" href="#">Floating Table of Contents</a>
+    <a id="previewLink" class="bubble" href="#">Link&nbsp;Previews</a>
+    <a id="annotateLink" class="bubble" href="#">Shareable&nbsp;Annotations</a>
+  </div>
+
+  <script>
+    /* --- bookmarklet source code strings --- */
+    const tocCode = "javascript:(function(){const o=document.getElementById(\"floating-toc\");o&&o.remove();const t=document.createElement(\"div\");t.id=\"floating-toc\",Object.assign(t.style,{position:\"fixed\",top:\"100px\",right:\"20px\",maxHeight:\"70vh\",overflowY:\"auto\",width:\"250px\",background:\"white\",border:\"1px solid #ccc\",borderRadius:\"8px\",padding:\"10px\",boxShadow:\"0 4px 12px rgba(0,0,0,0.15)\",zIndex:9999,cursor:\"move\",fontFamily:\"sans-serif\"}),t.innerHTML=\"<strong>📑 Table of Contents</strong><br><br>\";const e=[...document.querySelectorAll(\"h1,h2,h3,h4,h5,h6\")];e.forEach((e,l)=>{e.id||(e.id=\"toc-header-\"+l);const n=document.createElement(\"a\");n.href=\"#\"+e.id,n.textContent=e.textContent,Object.assign(n.style,{display:\"block\",marginLeft:`${10*(parseInt(e.tagName[1])-1)}px`,textDecoration:\"none\",color:\"#0077cc\",fontSize:\"13px\",cursor:\"pointer\"}),n.addEventListener(\"mouseenter\",()=>n.style.textDecoration=\"underline\"),n.addEventListener(\"mouseleave\",()=>n.style.textDecoration=\"none\"),n.addEventListener(\"click\",o=>{o.preventDefault(),document.getElementById(e.id).scrollIntoView({behavior:\"smooth\"})}),t.appendChild(n)}),document.body.appendChild(t);let l,n,i=!1;t.addEventListener(\"mousedown\",o=>{i=!0,l=o.clientX-t.offsetLeft,n=o.clientY-t.offsetTop,t.style.userSelect=\"none\"}),document.addEventListener(\"mousemove\",o=>{i&&(t.style.left=o.clientX-l+\"px\",t.style.top=o.clientY-n+\"px\")}),document.addEventListener(\"mouseup\",()=>{i=!1,t.style.userSelect=\"\"})})();";
+
+    const previewCode = "javascript:(function(){const e=document.createElement(\"iframe\");Object.assign(e.style,{position:\"fixed\",width:\"400px\",height:\"300px\",border:\"2px solid #333\",borderRadius:\"8px\",zIndex:999999,display:\"none\",backgroundColor:\"white\",pointerEvents:\"auto\"}),document.body.appendChild(e);let t=null;document.addEventListener(\"mouseover\",o=>{const r=o.target.closest(\"a\");r&&r.href.startsWith(\"http\")&&(t=r,e.src=r.href,e.style.top=`${o.clientY+10}px`,e.style.left=`${o.clientX+10}px`,e.style.display=\"block\")}),document.addEventListener(\"mouseout\",o=>{o.target===t&&!e.matches(\":hover\")&&setTimeout(()=>{!e.matches(\":hover\")&&document.activeElement!==e&&(e.style.display=\"none\",e.src=\"\")},200)}),e.addEventListener(\"mouseleave\",()=>{e.style.display=\"none\",e.src=\"\",t=null})})();";
+
+    const annotateCode = "javascript:(function(){const comments=[];function renderComment(x,y,text){const b=document.createElement('div');b.textContent=text;Object.assign(b.style,{position:'absolute',top:`${y}px`,left:`${x}px`,background:'yellow',border:'1px solid #aaa',borderRadius:'4px',padding:'4px 8px',fontSize:'13px',zIndex:99999,maxWidth:'200px',whiteSpace:'pre-wrap'});document.body.appendChild(b)}document.addEventListener('click',e=>{if(!e.shiftKey)return;e.preventDefault();const t=prompt('Write your comment:');if(t){const c={x:e.pageX,y:e.pageY,text:t};comments.push(c);renderComment(c.x,c.y,c.text)}});const btn=document.createElement('button');btn.textContent='📋 Copy Link With Comments';Object.assign(btn.style,{position:'fixed',top:'10px',left:'10px',zIndex:1e5,padding:'6px 12px',fontSize:'14px',background:'#0077cc',color:'white',border:'none',borderRadius:'6px',cursor:'pointer'});document.body.appendChild(btn);function b64EncodeUnicode(str){return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,(match,p1)=>String.fromCharCode('0x'+p1)))}function b64DecodeUnicode(str){return decodeURIComponent(atob(str).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''))}btn.onclick=()=>{const data=b64EncodeUnicode(JSON.stringify(comments));const url=new URL(location.href);url.hash='comments='+encodeURIComponent(data);navigator.clipboard.writeText(url.toString()).then(()=>{btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent='📋 Copy Link With Comments',2000)})};if(location.hash.startsWith('#comments=')){try{const raw=location.hash.slice(10);console.log('Raw hash data:',raw);const decoded=/%[0-9A-Fa-f]{2}/.test(raw)?decodeURIComponent(raw):raw;const saved=JSON.parse(b64DecodeUnicode(decoded));saved.forEach(c=>{comments.push(c);renderComment(c.x,c.y,c.text)})}catch(e){console.warn('Bad comment data:',e)}}})();";
+
+    /* --- assign bookmarklet code to each link --- */
+    document.getElementById('tocLink').href = tocCode;
+    document.getElementById('previewLink').href = previewCode;
+    document.getElementById('annotateLink').href = annotateCode;
+  </script>
+</body>
+</html>
